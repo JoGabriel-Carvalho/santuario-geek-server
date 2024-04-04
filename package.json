@@ -10,5 +10,9 @@
     "nodemon": "^3.1.0"
   },
   "author": "Gabriel Santos",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "mysql2": "^3.9.3"
+  }
 }
