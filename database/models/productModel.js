@@ -100,30 +100,45 @@ const ProductModel = {
     },
 
     // Method to update a product by its ID
-    updateProductById: async function (productInfo, callback) {
+    updateProductById: async function (userLogged, productInfo, callback) {
         try {
+            // Checking if the user is authorized to add a product
+            const [userResult] = await connection.execute('SELECT * FROM users WHERE user_id = ?', [userLogged.user.user_id]);
+
+            // If user not found or not an admin, return unauthorized message
+            if (userResult.length === 0 || !userResult[0].is_admin) {
+                callback(null, "Unauthorized");
+                return;
+            }
+
             // Updating product details in the database
             const [result] = await connection.execute('UPDATE products SET product_name = ?, product_description = ?, product_price = ?, category_id = ? WHERE product_id = ?',
                 [productInfo.updatedProduct.product_name, productInfo.updatedProduct.product_description, productInfo.updatedProduct.product_price, productInfo.updatedProduct.category_id, productInfo.productId]);
 
-            // Checking if the product exists
             if (result.affectedRows === 0) {
                 callback("Product not found", null);
                 return;
             }
 
-            // Callback indicating successful product update
             callback("Product updated successfully", null);
 
         } catch (error) {
-            // Callback with error message if there's an error updating product
             callback(null, "Error updating product: " + error.stack);
         }
     },
 
     // Method to delete a product by its ID
-    deleteProductById: async function (productId, callback) {
+    deleteProductById: async function (userLogged, productId, callback) {
         try {
+            // Checking if the user is authorized to add a product
+            const [userResult] = await connection.execute('SELECT * FROM users WHERE user_id = ?', [userLogged.user.user_id]);
+
+            // If user not found or not an admin, return unauthorized message
+            if (userResult.length === 0 || !userResult[0].is_admin) {
+                callback(null, "Unauthorized");
+                return;
+            }
+
             // Deleting product from the database
             const [result] = await connection.execute('DELETE FROM products WHERE product_id = ?', [productId]);
 

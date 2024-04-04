@@ -84,12 +84,17 @@ export const addProduct = async (request, response) => {
 };
 
 export const updateProductById = async (request, response) => {
+    const userLogged = request.user;
     const productId = request.params.productId;
     const productInfo = request.body;
 
-    await ProductModel.updateProductById(productId, productInfo, (result, error) => {
+    await ProductModel.updateProductById(userLogged, productId, productInfo, (result, error) => {
         if (error) {
             return sendResponse(response, 500, error);
+        }
+
+        if (result === "Unauthorized") {
+            return sendResponse(response, 401, "Unauthorized");
         }
 
         if (result === "Product not found") {
@@ -101,11 +106,16 @@ export const updateProductById = async (request, response) => {
 };
 
 export const deleteProductById = async (request, response) => {
+    const userLogged = request.user;
     const productId = request.params.productId;
 
-    await ProductModel.deleteProductById(productId, (result, error) => {
+    await ProductModel.deleteProductById(userLogged, productId, (result, error) => {
         if (error) {
             return sendResponse(response, 500, error);
+        }
+
+        if (result === "Unauthorized") {
+            return sendResponse(response, 401, "Unauthorized");
         }
 
         if (result === "Product not found") {
