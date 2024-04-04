@@ -12,7 +12,10 @@
   "author": "Gabriel Santos",
   "license": "ISC",
   "dependencies": {
+    "bcrypt": "^5.1.1",
     "dotenv": "^16.4.5",
-    "mysql2": "^3.9.3"
+    "jsonwebtoken": "^9.0.2",
+    "mysql2": "^3.9.3",
+    "uuid": "^9.0.1"
   }
 }
