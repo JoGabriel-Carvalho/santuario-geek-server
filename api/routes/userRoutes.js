@@ -1,4 +1,5 @@
 import express from "express";
+import authMiddleware from "../../middlewares/authMiddleware.js";
 import {
     signin,
     signup,
@@ -11,8 +12,10 @@ const router = express.Router();
 
 router.post("/signin", signin);
 router.post("/signup", signup);
-router.post("/address", addAddress);
-router.put("/address/:addressId", updateAddress);
-router.delete("/address/:addressId", deleteAddress);
+
+// Protected routes with authentication middleware
+router.post("/address", authMiddleware, addAddress);
+router.put("/address/:addressId", authMiddleware, updateAddress);
+router.delete("/address/:addressId", authMiddleware, deleteAddress);
 
 export default router;

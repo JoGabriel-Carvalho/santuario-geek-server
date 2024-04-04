@@ -1,14 +1,16 @@
 import express from "express";
+import authMiddleware from "../../middlewares/authMiddleware.js";
 import {
     createOrder,
     cancelOrder,
-    getOrderDetails
+    getOrderDetails,
 } from "../controllers/orderController.js";
 
 const router = express.Router();
 
-router.post("/orders/create", createOrder);
-router.put("/orders/cancel/:orderId", cancelOrder);
-router.get("/orders/:orderId", getOrderDetails);
+// Protected routes with authentication middleware
+router.post("/order/create", authMiddleware, createOrder);
+router.put("/order/cancel/:orderId", authMiddleware, cancelOrder);
+router.get("/order/:orderId", authMiddleware, getOrderDetails);
 
 export default router;
