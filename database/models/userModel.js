@@ -98,8 +98,8 @@ const UserModel = {
 
         try {
             // Inserting address details into the database
-            await connection.execute('INSERT INTO addresses (address_id, user_id, street, city, postal_code) VALUES (?, ?, ?, ?, ?)',
-                [addressId, userId, addressInfo.street, addressInfo.city, addressInfo.postal_code]);
+            await connection.execute('INSERT INTO addresses (address_id, user_id, address_line1, address_line2, city, postal_code) VALUES (?, ?, ?, ?, ?, ?)',
+                [addressId, userId, addressInfo.address_line1, addressInfo.address_line2, addressInfo.city, addressInfo.postal_code]);
 
             // Callback with the created address details
             callback({ address_id: addressId, ...addressInfo }, null);
@@ -114,8 +114,8 @@ const UserModel = {
     updateAddress: async function (addressId, addressInfo, callback) {
         try {
             // Updating address details in the database
-            const [result] = await connection.execute('UPDATE addresses SET street = ?, city = ?, postal_code = ? WHERE address_id = ?',
-                [addressInfo.street, addressInfo.city, addressInfo.postal_code, addressId]);
+            const result = await connection.execute('UPDATE addresses SET address_line1 = ?, address_line2 = ?, city = ?, postal_code = ? WHERE address_id = ?',
+                [addressInfo.address_line1, addressInfo.address_line2, addressInfo.city, addressInfo.postal_code, addressId]);
 
             if (result.affectedRows === 0) {
                 // Callback with address not found message if the address does not exist
@@ -136,7 +136,7 @@ const UserModel = {
     deleteAddress: async function (addressId, callback) {
         try {
             // Deleting address from the database
-            const [result] = await connection.execute('DELETE FROM addresses WHERE address_id = ?', [addressId]);
+            const result = await connection.execute('DELETE FROM addresses WHERE address_id = ?', [addressId]);
 
             if (result.affectedRows === 0) {
                 // Callback with address not found message if the address does not exist
