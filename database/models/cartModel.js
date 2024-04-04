@@ -48,21 +48,6 @@ const CartModel = {
             callback("Error removing item from cart: " + error.stack, null);
         }
     },
-
-    // Method to update the quantity of a cart item
-    updateCartItemQuantity: async function (userId, productId, newQuantity, callback) {
-        try {
-            // Updating the quantity of the cart item based on user ID and product ID
-            await connection.execute('UPDATE user_cart SET quantity = ? WHERE user_id = ? AND product_id = ?', [newQuantity, userId, productId]);
-
-            // Callback indicating successful update of cart item quantity
-            callback(null, "Cart item quantity updated successfully");
-
-        } catch (error) {
-            // Callback with error message if any error occurs during the process
-            callback("Error updating cart item quantity: " + error.stack, null);
-        }
-    },
 };
 
 export default CartModel; // Exporting the CartModel object as default
