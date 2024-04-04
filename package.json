@@ -1,0 +1,14 @@
+{
+  "name": "santuario-geek-server",
+  "version": "1.0.0",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "nodemon server.js"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
+  },
+  "author": "Gabriel Santos",
+  "license": "ISC"
+}
