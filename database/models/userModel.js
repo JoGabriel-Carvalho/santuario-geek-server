@@ -73,6 +73,53 @@ const UserModel = {
         });
     },
 
+    addAddress: async function (userId, addressInfo, callback) {
+        const addressId = uuidv4();
+
+        try {
+            await connection.execute('INSERT INTO addresses (address_id, user_id, street, city, postal_code) VALUES (?, ?, ?, ?, ?)',
+                [addressId, userId, addressInfo.street, addressInfo.city, addressInfo.postal_code]);
+
+            callback({ address_id: addressId, ...addressInfo }, null);
+
+        } catch (error) {
+            callback(null, "Error adding address: " + error.stack);
+        }
+    },
+
+    updateAddress: async function (addressId, addressInfo, callback) {
+        try {
+            const [result] = await connection.execute('UPDATE addresses SET street = ?, city = ?, postal_code = ? WHERE address_id = ?',
+                [addressInfo.street, addressInfo.city, addressInfo.postal_code, addressId]);
+
+            if (result.affectedRows === 0) {
+                callback("Address not found", null);
+                return;
+            }
+
+            callback("Address updated successfully", null);
+
+        } catch (error) {
+            callback(null, "Error updating address: " + error.stack);
+        }
+    },
+
+    deleteAddress: async function (addressId, callback) {
+        try {
+            const [result] = await connection.execute('DELETE FROM addresses WHERE address_id = ?', [addressId]);
+
+            if (result.affectedRows === 0) {
+                callback("Address not found", null);
+                return;
+            }
+
+            callback("Address deleted successfully", null);
+
+        } catch (error) {
+            callback(null, "Error deleting address: " + error.stack);
+        }
+    },
+
     generateUUID: function() {
         return uuidv4();
     }
