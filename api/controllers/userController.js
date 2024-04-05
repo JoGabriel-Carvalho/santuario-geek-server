@@ -37,8 +37,8 @@ export const signup = async (request, response) => {
 };
 
 export const addAddress = async (request, response) => {
-    const userId = request.user.id; // Extracting user ID from authenticated user's token
-    const addressInfo = request.body; // Extracting address details from request body
+    const userId = request.user.id;
+    const addressInfo = request.body;
 
     await UserModel.addAddress(userId, addressInfo, (result, error) => {
         if (error) {
@@ -50,8 +50,8 @@ export const addAddress = async (request, response) => {
 };
 
 export const updateAddress = async (request, response) => {
-    const addressId = request.params.addressId; // Extracting address ID from request parameters
-    const addressInfo = request.body; // Extracting updated address details from request body
+    const addressId = request.params.addressId;
+    const addressInfo = request.body;
 
     await UserModel.updateAddress(addressId, addressInfo, (result, error) => {
         if (error) {
@@ -67,7 +67,7 @@ export const updateAddress = async (request, response) => {
 };
 
 export const deleteAddress = async (request, response) => {
-    const addressId = request.params.addressId; // Extracting address ID from request parameters
+    const addressId = request.params.addressId;
 
     await UserModel.deleteAddress(addressId, (result, error) => {
         if (error) {
