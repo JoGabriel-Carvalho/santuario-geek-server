@@ -6,24 +6,28 @@ dotenv.config(); // Loading environment variables from .env file if present
 
 const ProductModel = {
     // Method to fetch all products
-    fetchProducts: async function (callback) {
-        try {
-            // Querying all products from the database
-            const [rows] = await connection.execute('SELECT * FROM products');
+    fetchProducts: function (callback) {
+        // Querying all products from the database
+        connection.query('SELECT * FROM products', (error, rows) => {
+            if (error) {
+                // Callback with error message if there's an error fetching products
+                callback(null, "Error fetching products: " + error.stack);
+                return;
+            }
             // Callback with fetched products
             callback(rows, null);
-
-        } catch (error) {
-            // Callback with error message if there's an error fetching products
-            callback(null, "Error fetching products: " + error.stack);
-        }
+        });
     },
 
     // Method to fetch a product by its ID
-    fetchProductById: async function (productId, callback) {
-        try {
-            // Querying product by ID from the database
-            const [rows] = await connection.execute('SELECT * FROM products WHERE product_id = ?', [productId]);
+    fetchProductById: function (productId, callback) {
+        // Querying product by ID from the database
+        connection.query('SELECT * FROM products WHERE product_id = ?', [productId], (error, rows) => {
+            if (error) {
+                // Callback with error message if there's an error fetching product
+                callback(null, "Error fetching product: " + error.stack);
+                return;
+            }
 
             // Checking if product exists
             if (rows.length === 0) {
@@ -33,128 +37,173 @@ const ProductModel = {
 
             // Callback with fetched product
             callback(rows[0], null);
-
-        } catch (error) {
-            // Callback with error message if there's an error fetching product
-            callback(null, "Error fetching product: " + error.stack);
-        }
+        });
     },
 
     // Method to fetch products by name
-    fetchProductsByName: async function (searchTerm, callback) {
+    fetchProductsByName: function (searchTerm, callback) {
         const searchQuery = `%${searchTerm}%`; // Constructing search query with wildcard characters
 
-        try {
-            // Querying products by name from the database
-            const [rows] = await connection.execute('SELECT * FROM products WHERE product_name LIKE ?', [searchQuery]);
+        // Querying products by name from the database
+        connection.query('SELECT * FROM products WHERE product_name LIKE ?', [searchQuery], (error, rows) => {
+            if (error) {
+                // Callback with error message if there's an error searching products
+                callback(null, "Error searching products: " + error.stack);
+                return;
+            }
             // Callback with fetched products
             callback(rows, null);
-
-        } catch (error) {
-            // Callback with error message if there's an error searching products
-            callback(null, "Error searching products: " + error.stack);
-        }
+        });
     },
 
-    // Method to fetch products by category
-    fetchProductsByCategory: async function (categoryName, callback) {
-        try {
-            // Querying products by category from the database
-            const [rows] = await connection.execute('SELECT * FROM products WHERE category_id = ?', [categoryName]);
+    // Method to fetch products by tags
+    fetchProductsByTags: function (tags, callback) {
+        // Split the tags string into individual tags
+        const tagArray = tags.split("-");
+
+        // Construct the WHERE clause for SQL query
+        const whereClause = tagArray.map(tag => "tags LIKE '%" + tag + "%'").join(" AND ");
+
+        // Querying products by tags from the database
+        connection.query('SELECT * FROM products WHERE ' + whereClause, (error, rows) => {
+            if (error) {
+                // Callback with error message if there's an error fetching products
+                callback(null, "Error fetching products: " + error.stack);
+                return;
+            }
             // Callback with fetched products
             callback(rows, null);
-
-        } catch (error) {
-            // Callback with error message if there's an error fetching products
-            callback(null, "Error fetching products: " + error.stack);
-        }
+        });
     },
 
     // Method to add a new product
-    addProduct: async function (userLogged, productInfo, callback) {
+    addProduct: async function (userId, productInfo, callback) {
         try {
-            // Checking if the user is authorized to add a product
-            const [userResult] = await connection.execute('SELECT * FROM users WHERE user_id = ?', [userLogged.user.user_id]);
+            // Retrieve user information by ID
+            const userResult = await this.getUserById(userId);
 
-            // If user not found or not an admin, return unauthorized message
+            // Check if user is not found or is not an admin
             if (userResult.length === 0 || !userResult[0].is_admin) {
+                // Send unauthorized message via callback
                 callback(null, "Unauthorized");
                 return;
             }
 
-            // Stringifying tags JSON
+            // Convert tags array to JSON string
             const tagsJson = JSON.stringify(productInfo.tags);
-            // Generating a new UUID for the product
-            const productId = this.generateUUID();
-            // Inserting product details into the database
-            await connection.execute('INSERT INTO products (product_id, product_name, product_price, product_picture, product_description, tags) VALUES (?, ?, CAST(? AS DECIMAL(10, 2)), ?, ?, ?)',
-                [productId, productInfo.product_name, productInfo.product_price, productInfo.product_picture, productInfo.product_description, tagsJson]);
 
-            // Callback with the created product details
-            callback({ product_id: productId, ...productInfo }, null);
+            // Generate a unique product ID
+            const productId = this.generateUUID();
+
+            // Insert new product into the database
+            connection.query('INSERT INTO products (product_id, product_name, product_price, product_picture, product_description, tags) VALUES (?, ?, CAST(? AS DECIMAL(10, 2)), ?, ?, ?)',
+                [productId, productInfo.product_name, productInfo.product_price, productInfo.product_picture, productInfo.product_description, tagsJson], (error, results) => {
+                    if (error) {
+                        // Send error message if an error occurs during product addition
+                        callback(null, "Error adding product: " + error.stack);
+
+                    } else {
+                        // Send the newly added product information via callback
+                        callback({ product_id: productId, ...productInfo }, null);
+                    }
+                });
 
         } catch (error) {
-            // Callback with error message if there's an error adding product
+            // Send error message if an error occurs during product addition
             callback(null, "Error adding product: " + error.stack);
         }
     },
 
     // Method to update a product by its ID
-    updateProductById: async function (userLogged, productInfo, callback) {
+    updateProductById: async function (userId, productId, productInfo, callback) {
         try {
-            // Checking if the user is authorized to add a product
-            const [userResult] = await connection.execute('SELECT * FROM users WHERE user_id = ?', [userLogged.user.user_id]);
+            // Retrieve user information by ID
+            const userResult = await this.getUserById(userId);
 
-            // If user not found or not an admin, return unauthorized message
+            // Check if user is not found or is not an admin
             if (userResult.length === 0 || !userResult[0].is_admin) {
+                // Send unauthorized message via callback
                 callback(null, "Unauthorized");
                 return;
             }
 
-            // Updating product details in the database
-            const [result] = await connection.execute('UPDATE products SET product_name = ?, product_description = ?, product_price = ?, category_id = ? WHERE product_id = ?',
-                [productInfo.updatedProduct.product_name, productInfo.updatedProduct.product_description, productInfo.updatedProduct.product_price, productInfo.updatedProduct.category_id, productInfo.productId]);
+            // Convert tags array to JSON string
+            const tagsJson = JSON.stringify(productInfo.tags);
 
-            if (result.affectedRows === 0) {
-                callback("Product not found", null);
-                return;
-            }
+            // Perform the product update query
+            connection.query('UPDATE products SET product_name = ?, product_description = ?, product_price = ?, product_picture = ?, tags = ? WHERE product_id = ?',
+                [productInfo.product_name, productInfo.product_description, productInfo.product_price, productInfo.product_picture, tagsJson, productId], (error, result) => {
+                    if (error) {
+                        // Send error message if an error occurs during product update
+                        callback(null, "Error updating product: " + error.stack);
 
-            callback("Product updated successfully", null);
+                    } else {
+                        // Check if the product was found and updated
+                        if (result.affectedRows === 0) {
+                            // Send message if product not found
+                            callback("Product not found", null);
+                        } else {
+                            // Send success message via callback
+                            callback("Product updated successfully", null);
+                        }
+                    }
+                });
 
         } catch (error) {
+            // Send error message if an error occurs during product update
             callback(null, "Error updating product: " + error.stack);
         }
     },
 
     // Method to delete a product by its ID
-    deleteProductById: async function (userLogged, productId, callback) {
+    deleteProductById: async function (userId, productId, callback) {
         try {
-            // Checking if the user is authorized to add a product
-            const [userResult] = await connection.execute('SELECT * FROM users WHERE user_id = ?', [userLogged.user.user_id]);
+            // Retrieve user information by ID
+            const userResult = await this.getUserById(userId);
 
-            // If user not found or not an admin, return unauthorized message
+            // Check if user is not found or is not an admin
             if (userResult.length === 0 || !userResult[0].is_admin) {
+                // Send unauthorized message via callback
                 callback(null, "Unauthorized");
                 return;
             }
 
-            // Deleting product from the database
-            const [result] = await connection.execute('DELETE FROM products WHERE product_id = ?', [productId]);
+            // Perform the product deletion query
+            connection.query('DELETE FROM products WHERE product_id = ?', [productId], (error, result) => {
+                if (error) {
+                    // Send error message if an error occurs during product deletion
+                    callback(null, "Error deleting product: " + error.stack);
 
-            // Checking if the product exists
-            if (result.affectedRows === 0) {
-                callback("Product not found", null);
-                return;
-            }
-
-            // Callback indicating successful product deletion
-            callback("Product deleted successfully", null);
+                } else {
+                    // Check if the product was found and deleted
+                    if (result.affectedRows === 0) {
+                        // Send message if product not found
+                        callback("Product not found", null);
+                    } else {
+                        // Send success message via callback
+                        callback("Product deleted successfully", null);
+                    }
+                }
+            });
 
         } catch (error) {
-            // Callback with error message if there's an error deleting product
+            // Send error message if an error occurs during product deletion
             callback(null, "Error deleting product: " + error.stack);
         }
+    },
+
+    // Method to get user by ID
+    getUserById: async function (userId) {
+        return new Promise((resolve, reject) => {
+            connection.query('SELECT * FROM users WHERE user_id = ?', [userId], (error, userResult) => {
+                if (error) {
+                    reject(error);
+                    return;
+                }
+
+                resolve(userResult);
+            });
+        });
     },
 
     // Method to generate UUID for a product

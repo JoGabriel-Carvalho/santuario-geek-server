@@ -50,16 +50,16 @@ export const fetchProductsByName = async (request, response) => {
     });
 };
 
-export const fetchProductsByCategory = async (request, response) => {
-    const categoryName = request.params.categoryName;
+export const fetchProductsByTags = async (request, response) => {
+    const tagName = request.params.tagName;
 
-    await ProductModel.fetchProductsByCategory(categoryName, (result, error) => {
+    await ProductModel.fetchProductsByTags(tagName, (result, error) => {
         if (error) {
             return sendResponse(response, 500, error);
         }
 
         if (!result || result.length === 0) {
-            return sendResponse(response, 404, "No products found in the specified category");
+            return sendResponse(response, 404, "No products found in the specified tags");
         }
 
         return sendResponse(response, 200, result);
@@ -67,7 +67,7 @@ export const fetchProductsByCategory = async (request, response) => {
 };
 
 export const addProduct = async (request, response) => {
-    const userLogged = request.user;
+    const userLogged = request.user.id;
     const productInfo = request.body;
 
     await ProductModel.addProduct(userLogged, productInfo, (result, error) => {
@@ -84,7 +84,7 @@ export const addProduct = async (request, response) => {
 };
 
 export const updateProductById = async (request, response) => {
-    const userLogged = request.user;
+    const userLogged = request.user.id;
     const productId = request.params.productId;
     const productInfo = request.body;
 
@@ -106,7 +106,7 @@ export const updateProductById = async (request, response) => {
 };
 
 export const deleteProductById = async (request, response) => {
-    const userLogged = request.user;
+    const userLogged = request.user.id;
     const productId = request.params.productId;
 
     await ProductModel.deleteProductById(userLogged, productId, (result, error) => {

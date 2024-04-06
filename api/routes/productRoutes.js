@@ -4,7 +4,7 @@ import {
     fetchProducts,
     fetchProductById,
     fetchProductsByName,
-    fetchProductsByCategory,
+    fetchProductsByTags,
     addProduct,
     updateProductById,
     deleteProductById,
@@ -16,7 +16,7 @@ const router = express.Router();
 router.get("/", fetchProducts);
 router.get("/:productId", fetchProductById);
 router.get("/search/:searchTerm", fetchProductsByName);
-router.get("/category/:categoryName", fetchProductsByCategory);
+router.get("/category/:tagName", fetchProductsByTags);
 
 // Protected routes with authentication middleware
 router.post("/add", authMiddleware, addProduct);
