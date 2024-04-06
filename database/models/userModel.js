@@ -114,7 +114,7 @@ const UserModel = {
     updateAddress: async function (addressId, addressInfo, callback) {
         try {
             // Updating address details in the database
-            const result = await connection.execute('UPDATE addresses SET address_line1 = ?, address_line2 = ?, city = ?, postal_code = ? WHERE address_id = ?',
+            const [result] = await connection.execute('UPDATE addresses SET address_line1 = ?, address_line2 = ?, city = ?, postal_code = ? WHERE address_id = ?',
                 [addressInfo.address_line1, addressInfo.address_line2, addressInfo.city, addressInfo.postal_code, addressId]);
 
             if (result.affectedRows === 0) {
