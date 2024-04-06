@@ -13,14 +13,14 @@ import {
 const router = express.Router();
 
 // Public routes
-router.get("/products", fetchProducts);
-router.get("/products/:productId", fetchProductById);
-router.get("/products/search/:searchTerm", fetchProductsByName);
-router.get("/products/category/:categoryName", fetchProductsByCategory);
+router.get("/", fetchProducts);
+router.get("/:productId", fetchProductById);
+router.get("/search/:searchTerm", fetchProductsByName);
+router.get("/category/:categoryName", fetchProductsByCategory);
 
 // Protected routes with authentication middleware
-router.post("/product/add", authMiddleware, addProduct);
-router.put("/product/update/:productId", authMiddleware, updateProductById);
-router.delete("/product/delete/:productId", authMiddleware, deleteProductById);
+router.post("/add", authMiddleware, addProduct);
+router.put("/update/:productId", authMiddleware, updateProductById);
+router.delete("/delete/:productId", authMiddleware, deleteProductById);
 
 export default router;

@@ -8,7 +8,7 @@ import {
 const router = express.Router();
 
 // Protected routes with authentication middleware
-router.post("/cart/add", authMiddleware, addItemToCart);
-router.delete("/cart/remove/:productId", authMiddleware, removeItemFromCart);
+router.post("/add", authMiddleware, addItemToCart);
+router.delete("/remove/:productId", authMiddleware, removeItemFromCart);
 
 export default router;
