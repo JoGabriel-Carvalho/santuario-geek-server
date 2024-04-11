@@ -8,47 +8,49 @@ dotenv.config(); // Loading environment variables from .env file if present
 
 const UserModel = {
     // Method to authenticate user sign-in
-    signin: function (user, callback) {
+    signin(user, callback) {
         // Querying user from database based on email
-        connection.query('SELECT * FROM users WHERE user_email = ?', [user.user_email], (error, rows) => {
-            if (error) {
-                // Callback with error message if there's an error executing the query
-                callback("Error executing query: " + error.stack);
-                return;
-            }
-
-            if (rows.length === 0) {
-                // Callback with user not found message if no user exists with the provided email
-                callback({ statusCode: 404, message: "User not found" }, null);
-                return;
-            }
-
-            const userDetails = rows[0];
-            // Comparing provided password with hashed password retrieved from database
-            bcrypt.compare(user.user_password, userDetails.user_password, (error, result) => {
+        connection.query(
+            'SELECT * FROM users WHERE user_email = ?',
+            [user.user_email], (error, rows) => {
                 if (error) {
-                    // Callback with error message if there's an error comparing passwords
-                    callback("Error comparing passwords: " + error.message);
+                    // Callback with error message if there's an error executing the query
+                    callback("Error executing query: " + error.stack);
                     return;
                 }
 
-                if (!result) {
-                    // Callback with invalid password message if passwords don't match
-                    callback({ statusCode: 401, message: "Invalid password" }, null);
+                if (rows.length === 0) {
+                    // Callback with user not found message if no user exists with the provided email
+                    callback({ statusCode: 404, message: "User not found" }, null);
                     return;
                 }
 
-                // Generating JWT token for user authentication
-                const token = jwt.sign({ id: userDetails.user_id, email: userDetails.user_email }, process.env.JWT_SECRET);
+                const userDetails = rows[0];
+                // Comparing provided password with hashed password retrieved from database
+                bcrypt.compare(user.user_password, userDetails.user_password, (error, result) => {
+                    if (error) {
+                        // Callback with error message if there's an error comparing passwords
+                        callback("Error comparing passwords: " + error.message);
+                        return;
+                    }
 
-                // Callback with user details and token
-                callback({ user: userDetails, token }, null);
+                    if (!result) {
+                        // Callback with invalid password message if passwords don't match
+                        callback({ statusCode: 401, message: "Invalid password" }, null);
+                        return;
+                    }
+
+                    // Generating JWT token for user authentication
+                    const token = jwt.sign({ id: userDetails.user_id, email: userDetails.user_email }, process.env.JWT_SECRET);
+
+                    // Callback with user details and token
+                    callback({ user: userDetails, token }, null);
+                });
             });
-        });
     },
 
     // Method to register a new user
-    signup: function (user, callback) {
+    signup(user, callback) {
         // Hashing password before storing it in the database
         bcrypt.hash(user.user_password, 10, (error, hash) => {
             if (error) {
@@ -60,39 +62,43 @@ const UserModel = {
             const userId = this.generateUUID();
 
             // Checking if the provided email already exists in the database
-            connection.query('SELECT * FROM users WHERE user_email = ?', [user.user_email], (error, rows) => {
-                if (error) {
-                    // Callback with error message if there's an error executing the query
-                    callback("Error executing query: " + error.stack);
-                    return;
-                }
-
-                if (rows.length > 0) {
-                    // Callback with email already exists message if the email is already registered
-                    callback({ statusCode: 400, message: "Email already exists" }, null);
-                    return;
-                }
-
-                // Inserting new user details into the database
-                connection.query('INSERT INTO users (user_id, user_name, user_email, user_password) VALUES (?, ?, ?, ?)', [userId, user.user_name, user.user_email, hash], (error, result) => {
+            connection.query(
+                'SELECT * FROM users WHERE user_email = ?',
+                [user.user_email], (error, rows) => {
                     if (error) {
-                        // Callback with error message if there's an error creating the user
-                        callback("Error creating user: " + error.stack);
+                        // Callback with error message if there's an error executing the query
+                        callback("Error executing query: " + error.stack);
                         return;
                     }
 
-                    // Generating JWT token for user authentication
-                    const token = jwt.sign({ id: userId, email: user.user_email }, process.env.JWT_SECRET);
+                    if (rows.length > 0) {
+                        // Callback with email already exists message if the email is already registered
+                        callback({ statusCode: 400, message: "Email already exists" }, null);
+                        return;
+                    }
 
-                    // Callback with user details and token
-                    callback({ user: { id: userId, email: user.user_email }, token }, null);
+                    // Inserting new user details into the database
+                    connection.query(
+                        'INSERT INTO users (user_id, user_name, user_email, user_password) VALUES (?, ?, ?, ?)',
+                        [userId, user.user_name, user.user_email, hash], (error, result) => {
+                            if (error) {
+                                // Callback with error message if there's an error creating the user
+                                callback("Error creating user: " + error.stack);
+                                return;
+                            }
+
+                            // Generating JWT token for user authentication
+                            const token = jwt.sign({ id: userId, email: user.user_email }, process.env.JWT_SECRET);
+
+                            // Callback with user details and token
+                            callback({ user: { id: userId, email: user.user_email }, token }, null);
+                        });
                 });
-            });
         });
     },
 
     // Method to add a new address for a user
-    addAddress: function (userId, addressInfo, callback) {
+    addAddress(userId, addressInfo, callback) {
         const addressId = uuidv4(); // Generating a new UUID for the address
 
         // Inserting address details into the database
@@ -112,9 +118,10 @@ const UserModel = {
     },
 
     // Method to update an existing address
-    updateAddress: function (addressId, addressInfo, callback) {
+    updateAddress(addressId, addressInfo, callback) {
         // Updating address details in the database
-        connection.query('UPDATE addresses SET address_line1 = ?, address_line2 = ?, city = ?, postal_code = ? WHERE address_id = ?',
+        connection.query(
+            'UPDATE addresses SET address_line1 = ?, address_line2 = ?, city = ?, postal_code = ? WHERE address_id = ?',
             [addressInfo.address_line1, addressInfo.address_line2, addressInfo.city, addressInfo.postal_code, addressId], (error, result) => {
                 if (error) {
                     // Callback with error message if there's an error executing the query
@@ -135,9 +142,11 @@ const UserModel = {
     },
 
     // Method to delete an existing address
-    deleteAddress: function (addressId, callback) {
+    deleteAddress(addressId, callback) {
         // Deleting address from the database
-        connection.query('DELETE FROM addresses WHERE address_id = ?', [addressId], (error, result) => {
+        connection.query(
+            'DELETE FROM addresses WHERE address_id = ?',
+            [addressId], (error, result) => {
                 if (error) {
                     // Callback with error message if there's an error executing the query
                     callback("Error deleting address: " + error.stack, null);
@@ -157,7 +166,7 @@ const UserModel = {
     },
 
     // Method to generate UUID
-    generateUUID: function () {
+    generateUUID() {
         return uuidv4();
     }
 };

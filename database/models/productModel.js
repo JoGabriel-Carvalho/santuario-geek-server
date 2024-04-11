@@ -6,9 +6,10 @@ dotenv.config(); // Loading environment variables from .env file if present
 
 const ProductModel = {
     // Method to fetch all products
-    fetchProducts: function (callback) {
+    fetchProducts(callback) {
         // Querying all products from the database
-        connection.query('SELECT * FROM products', (error, rows) => {
+        connection.query(
+            'SELECT * FROM products', (error, rows) => {
             if (error) {
                 // Callback with error message if there's an error fetching products
                 callback(null, "Error fetching products: " + error.stack);
@@ -20,64 +21,74 @@ const ProductModel = {
     },
 
     // Method to fetch a product by its ID
-    fetchProductById: function (productId, callback) {
+    fetchProductById(productId, callback) {
         // Querying product by ID from the database
-        connection.query('SELECT * FROM products WHERE product_id = ?', [productId], (error, rows) => {
-            if (error) {
-                // Callback with error message if there's an error fetching product
-                callback(null, "Error fetching product: " + error.stack);
-                return;
-            }
+        connection.query(
+            'SELECT * FROM products WHERE product_id = ?',
+            [productId],
+            (error, rows) => {
+                if (error) {
+                    // Callback with error message if there's an error fetching product
+                    callback(null, "Error fetching product: " + error.stack);
+                    return;
+                }
 
-            // Checking if product exists
-            if (rows.length === 0) {
-                callback("Product not found", null);
-                return;
-            }
+                // Checking if product exists
+                if (rows.length === 0) {
+                    callback("Product not found", null);
+                    return;
+                }
 
-            // Callback with fetched product
-            callback(rows[0], null);
-        });
+                // Callback with fetched product
+                callback(rows[0], null);
+            }
+        );
     },
 
     // Method to fetch products by name
-    fetchProductsByName: function (searchTerm, callback) {
+    fetchProductsByName(searchTerm, callback) {
         const searchQuery = `%${searchTerm}%`; // Constructing search query with wildcard characters
 
         // Querying products by name from the database
-        connection.query('SELECT * FROM products WHERE product_name LIKE ?', [searchQuery], (error, rows) => {
-            if (error) {
-                // Callback with error message if there's an error searching products
-                callback(null, "Error searching products: " + error.stack);
-                return;
+        connection.query(
+            'SELECT * FROM products WHERE product_name LIKE ?',
+            [searchQuery],
+            (error, rows) => {
+                if (error) {
+                    // Callback with error message if there's an error searching products
+                    callback(null, "Error searching products: " + error.stack);
+                    return;
+                }
+                // Callback with fetched products
+                callback(rows, null);
             }
-            // Callback with fetched products
-            callback(rows, null);
-        });
+        );
     },
 
     // Method to fetch products by tags
-    fetchProductsByTags: function (tags, callback) {
+    fetchProductsByTags(tags, callback) {
         // Split the tags string into individual tags
         const tagArray = tags.split("-");
-
         // Construct the WHERE clause for SQL query
         const whereClause = tagArray.map(tag => "tags LIKE '%" + tag + "%'").join(" AND ");
 
         // Querying products by tags from the database
-        connection.query('SELECT * FROM products WHERE ' + whereClause, (error, rows) => {
-            if (error) {
-                // Callback with error message if there's an error fetching products
-                callback(null, "Error fetching products: " + error.stack);
-                return;
+        connection.query(
+            'SELECT * FROM products WHERE ' + whereClause,
+            (error, rows) => {
+                if (error) {
+                    // Callback with error message if there's an error fetching products
+                    callback(null, "Error fetching products: " + error.stack);
+                    return;
+                }
+                // Callback with fetched products
+                callback(rows, null);
             }
-            // Callback with fetched products
-            callback(rows, null);
-        });
+        );
     },
 
     // Method to add a new product
-    addProduct: async function (userId, productInfo, callback) {
+    async addProduct(userId, productInfo, callback) {
         try {
             // Retrieve user information by ID
             const userResult = await this.getUserById(userId);
@@ -96,17 +107,19 @@ const ProductModel = {
             const productId = this.generateUUID();
 
             // Insert new product into the database
-            connection.query('INSERT INTO products (product_id, product_name, product_price, product_picture, product_description, tags) VALUES (?, ?, CAST(? AS DECIMAL(10, 2)), ?, ?, ?)',
-                [productId, productInfo.product_name, productInfo.product_price, productInfo.product_picture, productInfo.product_description, tagsJson], (error, results) => {
+            connection.query(
+                'INSERT INTO products (product_id, product_name, product_price, product_picture, product_description, tags) VALUES (?, ?, CAST(? AS DECIMAL(10, 2)), ?, ?, ?)',
+                [productId, productInfo.product_name, productInfo.product_price, productInfo.product_picture, productInfo.product_description, tagsJson],
+                (error, results) => {
                     if (error) {
                         // Send error message if an error occurs during product addition
                         callback(null, "Error adding product: " + error.stack);
-
                     } else {
                         // Send the newly added product information via callback
                         callback({ product_id: productId, ...productInfo }, null);
                     }
-                });
+                }
+            );
 
         } catch (error) {
             // Send error message if an error occurs during product addition
@@ -115,7 +128,7 @@ const ProductModel = {
     },
 
     // Method to update a product by its ID
-    updateProductById: async function (userId, productId, productInfo, callback) {
+    async updateProductById(userId, productId, productInfo, callback) {
         try {
             // Retrieve user information by ID
             const userResult = await this.getUserById(userId);
@@ -131,12 +144,13 @@ const ProductModel = {
             const tagsJson = JSON.stringify(productInfo.tags);
 
             // Perform the product update query
-            connection.query('UPDATE products SET product_name = ?, product_description = ?, product_price = ?, product_picture = ?, tags = ? WHERE product_id = ?',
-                [productInfo.product_name, productInfo.product_description, productInfo.product_price, productInfo.product_picture, tagsJson, productId], (error, result) => {
+            connection.query(
+                'UPDATE products SET product_name = ?, product_description = ?, product_price = ?, product_picture = ?, tags = ? WHERE product_id = ?',
+                [productInfo.product_name, productInfo.product_description, productInfo.product_price, productInfo.product_picture, tagsJson, productId],
+                (error, result) => {
                     if (error) {
                         // Send error message if an error occurs during product update
                         callback(null, "Error updating product: " + error.stack);
-
                     } else {
                         // Check if the product was found and updated
                         if (result.affectedRows === 0) {
@@ -147,7 +161,8 @@ const ProductModel = {
                             callback("Product updated successfully", null);
                         }
                     }
-                });
+                }
+            );
 
         } catch (error) {
             // Send error message if an error occurs during product update
@@ -156,7 +171,7 @@ const ProductModel = {
     },
 
     // Method to delete a product by its ID
-    deleteProductById: async function (userId, productId, callback) {
+    async deleteProductById(userId, productId, callback) {
         try {
             // Retrieve user information by ID
             const userResult = await this.getUserById(userId);
@@ -169,22 +184,25 @@ const ProductModel = {
             }
 
             // Perform the product deletion query
-            connection.query('DELETE FROM products WHERE product_id = ?', [productId], (error, result) => {
-                if (error) {
-                    // Send error message if an error occurs during product deletion
-                    callback(null, "Error deleting product: " + error.stack);
-
-                } else {
-                    // Check if the product was found and deleted
-                    if (result.affectedRows === 0) {
-                        // Send message if product not found
-                        callback("Product not found", null);
+            connection.query(
+                'DELETE FROM products WHERE product_id = ?',
+                [productId],
+                (error, result) => {
+                    if (error) {
+                        // Send error message if an error occurs during product deletion
+                        callback(null, "Error deleting product: " + error.stack);
                     } else {
-                        // Send success message via callback
-                        callback("Product deleted successfully", null);
+                        // Check if the product was found and deleted
+                        if (result.affectedRows === 0) {
+                            // Send message if product not found
+                            callback("Product not found", null);
+                        } else {
+                            // Send success message via callback
+                            callback("Product deleted successfully", null);
+                        }
                     }
                 }
-            });
+            );
 
         } catch (error) {
             // Send error message if an error occurs during product deletion
@@ -193,21 +211,25 @@ const ProductModel = {
     },
 
     // Method to get user by ID
-    getUserById: async function (userId) {
+    getUserById(userId) {
         return new Promise((resolve, reject) => {
-            connection.query('SELECT * FROM users WHERE user_id = ?', [userId], (error, userResult) => {
-                if (error) {
-                    reject(error);
-                    return;
-                }
+            connection.query(
+                'SELECT * FROM users WHERE user_id = ?',
+                [userId],
+                (error, userResult) => {
+                    if (error) {
+                        reject(error);
+                        return;
+                    }
 
-                resolve(userResult);
-            });
+                    resolve(userResult);
+                }
+            );
         });
     },
 
     // Method to generate UUID for a product
-    generateUUID: function () {
+    generateUUID() {
         return uuidv4();
     }
 };
