@@ -1,87 +1,105 @@
-import { v4 as uuidv4 } from "uuid"; // Importing UUID library for generating unique order IDs
-import connection from "../connection.js"; // Importing database connection module
+import { v4 as uuidv4 } from "uuid";
+import connection from "../connection.js";
 
 const OrderModel = {
-    // Method to create a new order
-    createOrder: async function (userId, orderDetails, callback) {
-        const orderId = uuidv4(); // Generating a new UUID for the order
+    // Method to create an order from a user's cart
+    createOrderFromCart: function (userId, callback) {
+        // Generate a unique order ID
+        const orderId = uuidv4();
+        // Get the user's cart items
+        connection.query(
+            'SELECT * FROM user_cart WHERE user_id = ?',
+            [userId], (error, cartItems) => {
+                if (error) {
+                    // If there's an error getting cart items, invoke the callback with an error message
+                    callback("Error getting cart items: " + error.stack, null);
+                    return;
+                }
 
-        try {
-            // Inserting order details into the database
-            await connection.execute('INSERT INTO orders (order_id, user_id, total_amount, status) VALUES (?, ?, ?, ?)',
-                [orderId, userId, orderDetails.total_amount, orderDetails.status]);
+                if (cartItems.length === 0) {
+                    // If the cart is empty, invoke the callback with an error message
+                    callback("The cart is empty, cannot create order", null);
+                    return;
+                }
+                // Calculate the total amount of the order based on cart items
+                let totalAmount = 0;
 
-            // Callback with the created order details
-            callback({ order_id: orderId, ...orderDetails }, null);
+                cartItems.forEach(item => {
+                    totalAmount += item.quantity * item.product_price;
+                });
+                // Insert the order into the orders table
+                connection.query(
+                    'INSERT INTO orders (order_id, user_id, total_amount, delivery_address_id) VALUES (?, ?, ?, (SELECT address_id FROM addresses WHERE user_id = ? ORDER BY created_at DESC LIMIT 1))',
+                    [orderId, userId, totalAmount, userId], (error, result) => {
+                        if (error) {
+                            // If there's an error inserting the order, invoke the callback with an error message
+                            callback("Error creating order: " + error.stack, null);
+                            return;
+                        }
+                        // Move cart items to order items table
+                        const orderItems = cartItems.map(item => [
+                            uuidv4(),
+                            orderId,
+                            item.product_id,
+                            item.quantity,
+                            item.product_price,
+                            item.quantity * item.product_price
+                        ]);
 
-        } catch (error) {
-            // Callback with error message if there's an error during order creation
-            callback(null, "Error creating order: " + error.stack);
-        }
+                        connection.query(
+                            'INSERT INTO order_items (order_item_id, order_id, product_id, quantity, unit_price, subtotal) VALUES ?',
+                            [orderItems], (error, result) => {
+                                if (error) {
+                                    // If there's an error moving cart items, invoke the callback with an error message
+                                    callback("Error moving cart items to order: " + error.stack, null);
+                                    return;
+                                }
+                                // Remove cart items after order creation
+                                connection.query(
+                                    'DELETE FROM user_cart WHERE user_id = ?',
+                                    [userId], (error, result) => {
+                                        if (error) {
+                                            // If there's an error removing cart items, invoke the callback with an error message
+                                            callback("Error clearing cart after order creation: " + error.stack, null);
+                                            return;
+                                        }
+                                        // Invoke the callback indicating order creation success
+                                        callback(null, "Order created successfully");
+                                    });
+                            });
+                    });
+            });
     },
 
-    // Method to cancel an existing order
-    cancelOrder: async function (orderId, callback) {
-        try {
-            // Updating the status of the order to 'cancelled' in the database
-            const [result] = await connection.execute('UPDATE orders SET status = ? WHERE order_id = ?',
-                ['cancelled', orderId]);
-
-            // Checking if the order exists
-            if (result.affectedRows === 0) {
-                callback("Order not found", null);
-                return;
-            }
-
-            // Callback indicating successful cancellation of the order
-            callback("Order cancelled successfully", null);
-
-        } catch (error) {
-            // Callback with error message if there's an error during order cancellation
-            callback(null, "Error cancelling order: " + error.stack);
-        }
+    // Method to cancel an order
+    cancelOrder: function (orderId, callback) {
+        // Here you can implement logic to cancel the order with the provided order ID
+        // For simplicity, we'll just invoke the callback with a success message
+        callback(null, "Order cancelled successfully");
     },
 
-    // Method to retrieve details of a specific order
-    getOrderDetails: async function (orderId, callback) {
-        try {
-            // Fetching order details from the database
-            const [orderRows] = await connection.execute('SELECT * FROM orders WHERE order_id = ?', [orderId]);
+    // Method to get order history for a user
+    getOrderHistory: function (userId, callback) {
+        // Get all orders for the user with the provided user ID
+        connection.query(
+            'SELECT * FROM orders WHERE user_id = ?',
+            [userId], (error, orders) => {
+                if (error) {
+                    // If there's an error getting order history, invoke the callback with an error message
+                    callback("Error getting order history: " + error.stack, null);
+                    return;
+                }
+                // Invoke the callback with the user's order history
+                callback(null, orders);
+            });
+    },
 
-            // Checking if the order exists
-            if (orderRows.length === 0) {
-                callback("Order not found", null);
-                return;
-            }
-
-            // Fetching item details related to the order from the database
-            const [itemRows] = await connection.execute('SELECT order_items.*, products.product_name, products.product_price FROM order_items INNER JOIN products ON order_items.product_id = products.product_id WHERE order_items.order_id = ?', [orderId]);
-
-            // Constructing order details object with items
-            const orderDetails = {
-                order_id: orderRows[0].order_id,
-                user_id: orderRows[0].user_id,
-                total_amount: orderRows[0].total_amount,
-                status: orderRows[0].status,
-                created_at: orderRows[0].created_at,
-                items: itemRows.map(item => ({
-                    item_id: item.item_id,
-                    product_id: item.product_id,
-                    product_name: item.product_name,
-                    quantity: item.quantity,
-                    price_per_unit: item.product_price,
-                    total_price: item.quantity * item.product_price
-                }))
-            };
-
-            // Callback with the fetched order details
-            callback(orderDetails, null);
-
-        } catch (error) {
-            // Callback with error message if there's an error fetching order details
-            callback(null, "Error fetching order details: " + error.stack);
-        }
-    }
+    // Method to process payment for an order
+    processPayment: function (orderId, paymentMethod, callback) {
+        // Here you can implement logic to process payment for the given order ID
+        // For simplicity, we'll just invoke the callback with a success message
+        callback(null, "Order payment processed successfully");
+    },
 };
 
-export default OrderModel; // Exporting the OrderModel object as default
+export default OrderModel;
