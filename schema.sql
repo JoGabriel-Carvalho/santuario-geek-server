@@ -28,7 +28,9 @@ CREATE TABLE IF NOT EXISTS products (
     product_price DECIMAL(10, 2) NOT NULL,
     product_picture LONGTEXT,
     product_description TEXT,
+    quantity INT NOT NULL DEFAULT 0,
     tags TEXT,
+    is_purchased BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -37,7 +39,6 @@ CREATE TABLE IF NOT EXISTS user_cart (
     user_id CHAR(36) NOT NULL,
     product_id CHAR(36) NOT NULL,
     quantity INT NOT NULL,
-    is_purchased BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
     FOREIGN KEY (product_id) REFERENCES products(product_id) ON DELETE CASCADE
