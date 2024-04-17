@@ -1,5 +1,5 @@
-import { v4 as uuidv4 } from "uuid";
-import connection from "../connection.js";
+import { v4 as uuidv4 } from "uuid"; // Importing UUID library for generating unique product IDs
+import connection from "../connection.js"; // Importing database connection module
 
 const CartModel = {
     // Method to retrieve the user's cart items

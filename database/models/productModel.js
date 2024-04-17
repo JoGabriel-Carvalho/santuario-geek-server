@@ -6,22 +6,22 @@ dotenv.config(); // Loading environment variables from .env file if present
 
 const ProductModel = {
     // Method to fetch all products
-    fetchProducts(callback) {
+    fetchProducts: function (callback) {
         // Querying all products from the database
         connection.query(
             'SELECT * FROM products', (error, rows) => {
-            if (error) {
-                // Callback with error message if there's an error fetching products
-                callback(null, "Error fetching products: " + error.stack);
-                return;
-            }
-            // Callback with fetched products
-            callback(rows, null);
-        });
+                if (error) {
+                    // Callback with error message if there's an error fetching products
+                    callback(null, "Error fetching products: " + error.stack);
+                    return;
+                }
+                // Callback with fetched products
+                callback(rows, null);
+            });
     },
 
     // Method to fetch a product by its ID
-    fetchProductById(productId, callback) {
+    fetchProductById: function (productId, callback) {
         // Querying product by ID from the database
         connection.query(
             'SELECT * FROM products WHERE product_id = ?',
@@ -46,7 +46,7 @@ const ProductModel = {
     },
 
     // Method to fetch products by name
-    fetchProductsByName(searchTerm, callback) {
+    fetchProductsByName: function (searchTerm, callback) {
         const searchQuery = `%${searchTerm}%`; // Constructing search query with wildcard characters
 
         // Querying products by name from the database
@@ -66,7 +66,7 @@ const ProductModel = {
     },
 
     // Method to fetch products by tags
-    fetchProductsByTags(tags, callback) {
+    fetchProductsByTags: function (tags, callback) {
         // Split the tags string into individual tags
         const tagArray = tags.split("-");
         // Construct the WHERE clause for SQL query
@@ -211,7 +211,7 @@ const ProductModel = {
     },
 
     // Method to get user by ID
-    getUserById(userId) {
+    getUserById: function (userId) {
         return new Promise((resolve, reject) => {
             connection.query(
                 'SELECT * FROM users WHERE user_id = ?',

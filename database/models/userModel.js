@@ -8,7 +8,7 @@ dotenv.config(); // Loading environment variables from .env file if present
 
 const UserModel = {
     // Method to authenticate user sign-in
-    signin(user, callback) {
+    signin: function (user, callback) {
         // Querying user from database based on email
         connection.query(
             'SELECT * FROM users WHERE user_email = ?',
@@ -50,7 +50,7 @@ const UserModel = {
     },
 
     // Method to register a new user
-    signup(user, callback) {
+    signup: function (user, callback) {
         // Hashing password before storing it in the database
         bcrypt.hash(user.user_password, 10, (error, hash) => {
             if (error) {
@@ -98,7 +98,7 @@ const UserModel = {
     },
 
     // Method to add a new address for a user
-    addAddress(userId, addressInfo, callback) {
+    addAddress: function (userId, addressInfo, callback) {
         const addressId = uuidv4(); // Generating a new UUID for the address
 
         // Inserting address details into the database
@@ -118,7 +118,7 @@ const UserModel = {
     },
 
     // Method to update an existing address
-    updateAddress(addressId, addressInfo, callback) {
+    updateAddress: function (addressId, addressInfo, callback) {
         // Updating address details in the database
         connection.query(
             'UPDATE addresses SET address_line1 = ?, address_line2 = ?, city = ?, postal_code = ? WHERE address_id = ?',
@@ -142,7 +142,7 @@ const UserModel = {
     },
 
     // Method to delete an existing address
-    deleteAddress(addressId, callback) {
+    deleteAddress: function (addressId, callback) {
         // Deleting address from the database
         connection.query(
             'DELETE FROM addresses WHERE address_id = ?',
